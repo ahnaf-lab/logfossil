@@ -1,0 +1,17 @@
+{
+  "name": "logfossil",
+  "version": "0.1.0",
+  "description": "Tails log files and deterministically renders each line as a sediment layer in a scrollable rock-strata image.",
+  "main": "src/index.js",
+  "bin": {
+    "logfossil": "bin/logfossil.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "private": true
+}
