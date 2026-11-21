@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="183" viewBox="0 0 320 183" role="img" aria-label="logfossil core sample">
+<rect x="0" y="0" width="320" height="183" fill="#0b0a09"/>
+<g data-severity="INFO">
+<title>INFO gap=0ms vol=1</title>
+<rect x="0" y="0" width="320" height="18" fill="#2f6993"/>
+<circle cx="69.23" cy="0.71" r="0.67" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="238.2" cy="5.82" r="0.74" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="133.73" cy="7.64" r="1.48" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="24.46" cy="0.14" r="1.74" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="97.58" cy="5.96" r="0.84" fill="#ffffff" fill-opacity="0.12"/>
+</g>
+<g data-severity="INFO">
+<title>INFO gap=200ms vol=2</title>
+<rect x="0" y="18" width="320" height="22.8" fill="#3591d2"/>
+<circle cx="215.92" cy="30.04" r="1.66" fill="#000000" fill-opacity="0.08"/>
+<circle cx="34.75" cy="28.69" r="1.25" fill="#000000" fill-opacity="0.08"/>
+<circle cx="224.95" cy="36.49" r="1.19" fill="#000000" fill-opacity="0.08"/>
+<circle cx="61.85" cy="27.06" r="0.89" fill="#000000" fill-opacity="0.08"/>
+<circle cx="5.07" cy="37.43" r="0.76" fill="#000000" fill-opacity="0.08"/>
+<circle cx="191.82" cy="28.43" r="0.75" fill="#000000" fill-opacity="0.08"/>
+</g>
+<g data-severity="INFO">
+<title>INFO gap=200ms vol=3</title>
+<rect x="0" y="40.8" width="320" height="27.6" fill="#3185c0"/>
+<circle cx="113.04" cy="44.9" r="0.68" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="304.67" cy="43.31" r="1.5" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="115.14" cy="42.29" r="1.7" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="122.95" cy="64.38" r="1" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="117.09" cy="62.35" r="1.11" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="177.72" cy="48.19" r="1.45" fill="#ffffff" fill-opacity="0.12"/>
+</g>
+<g data-severity="WARN">
+<title>WARN gap=600ms vol=1</title>
+<rect x="0" y="68.4" width="320" height="30" fill="#a3802d"/>
+<circle cx="180.97" cy="87.56" r="1.34" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="280.65" cy="88.79" r="0.93" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="203.76" cy="96.64" r="0.92" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="108.03" cy="95.67" r="1.26" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="173.51" cy="69.71" r="1.51" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="143.6" cy="98.25" r="1.45" fill="#ffffff" fill-opacity="0.12"/>
+</g>
+<g data-severity="ERROR">
+<title>ERROR gap=500ms vol=2</title>
+<rect x="0" y="98.4" width="320" height="52.8" fill="#c72b2b"/>
+<circle cx="252.25" cy="111.02" r="1.11" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="118.46" cy="139.57" r="1.17" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="3.48" cy="149.57" r="1.16" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="267.29" cy="124.02" r="1.11" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="257.23" cy="150.62" r="1.24" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="286.44" cy="102.8" r="1.48" fill="#ffffff" fill-opacity="0.12"/>
+</g>
+<g data-severity="FATAL">
+<title>FATAL gap=123500ms vol=1 unconformity</title>
+<rect x="0" y="151.2" width="320" height="9" fill="#696159"/>
+<line x1="0" y1="154.2" x2="320" y2="154.2" stroke="#1a1714" stroke-width="0.6" stroke-opacity="0.5"/>
+<line x1="0" y1="157.2" x2="320" y2="157.2" stroke="#1a1714" stroke-width="0.6" stroke-opacity="0.5"/>
+</g>
+<g data-severity="INFO">
+<title>INFO gap=500ms vol=2</title>
+<rect x="0" y="160.2" width="320" height="22.8" fill="#30678e"/>
+<circle cx="3.96" cy="177.22" r="1.69" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="42.87" cy="169.76" r="1.38" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="166.49" cy="168.18" r="1.05" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="127.93" cy="167.88" r="0.96" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="62.02" cy="174.6" r="1.23" fill="#ffffff" fill-opacity="0.12"/>
+<circle cx="284.63" cy="167.92" r="0.62" fill="#ffffff" fill-opacity="0.12"/>
+</g>
+</svg>

@@ -6,12 +6,14 @@ like a geological core sample. Built for backend and SRE teams who want to
 browse months of incidents as a single vertical history instead of grepping
 timestamps.
 
-This milestone implements the **strata engine**: the deterministic mapping
-from a log line's severity, local volume (burstiness), and time gap since the
-previous line into a layer's height, color, and texture seed. Later
-milestones will add the file-tailing daemon and the rendered core-sample
-image; for now the engine is exercised through a small CLI that prints one
-JSON layer per log line.
+This milestone adds the **core renderer** on top of the strata engine: the
+deterministic mapping from a log line's severity, local volume (burstiness),
+and time gap since the previous line into a layer's height, color, and
+texture seed, composed into a single scrollable SVG "core sample" image.
+Later milestones will add the file-tailing daemon that keeps this image
+growing live; for now the renderer is exercised through a small CLI that
+either prints one JSON layer per log line or, with `--svg`, the whole
+composed image.
 
 ## Install
 
@@ -29,6 +31,24 @@ Run the CLI against a log file, or pipe lines into it over stdin:
 node bin/logfossil.js path/to/app.log
 tail -f app.log | node bin/logfossil.js
 ```
+
+Add `--svg` to get a single scrollable SVG core-sample image composed from
+the whole log instead of the per-line JSON stream:
+
+```
+node bin/logfossil.js --svg path/to/app.log > core-sample.svg
+```
+
+The image stacks one flat-colored band per layer top to bottom, in the order
+the lines occurred (so scrolling down shows more recent history), each band
+sized from its deterministic height. Bands get a scattering of subtle
+speckles seeded from the layer's `textureSeed`, so the grain pattern is
+reproducible rather than flat solid color. Unconformity layers (long gaps in
+logging) render thin with erosion-line hatching instead of speckles, so they
+read visually as a gap rather than deposited rock. Because every input to
+the renderer is deterministic, the same log file always produces the exact
+same SVG, byte for byte — this is verified with a golden test against a
+fixed fixture (`test/fixtures/sample.log` / `test/fixtures/sample.svg`).
 
 Each line of output is a JSON object describing one layer:
 
@@ -55,11 +75,15 @@ engine depends on wall-clock time or randomness.
 Programmatic API (see `src/index.js`):
 
 ```js
-const { parseLine, LayerEngine } = require('logfossil');
+const { parseLine, LayerEngine, renderCoreSampleSvg } = require('logfossil');
 
 const engine = new LayerEngine();
-const entry = parseLine('2024-03-05T10:00:00Z ERROR connection refused');
-const layer = engine.process(entry);
+const layers = [
+  '2024-03-05T10:00:00Z INFO service ready',
+  '2024-03-05T10:00:01Z ERROR connection refused',
+].map((line) => engine.process(parseLine(line)));
+
+const svg = renderCoreSampleSvg(layers); // scrollable SVG core-sample string
 ```
 
 Run the test suite with:

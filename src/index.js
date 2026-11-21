@@ -4,6 +4,7 @@ const { parseLine, TIMESTAMP_PATTERN } = require('./parseLine');
 const { classifySeverity, SEVERITY_LEVELS } = require('./severity');
 const { LayerEngine, deriveColor, hslToHex } = require('./layerEngine');
 const { hashHex, hashToInt, hashToUnit } = require('./hash');
+const { renderCoreSampleSvg } = require('./renderer');
 
 module.exports = {
   parseLine,
@@ -16,4 +17,5 @@ module.exports = {
   hashHex,
   hashToInt,
   hashToUnit,
+  renderCoreSampleSvg,
 };
