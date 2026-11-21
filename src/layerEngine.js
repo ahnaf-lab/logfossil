@@ -5,11 +5,19 @@ const { hashToInt, hashToUnit } = require('./hash');
 const DEFAULT_BUCKET_MS = 1000; // window used to measure "volume" (burstiness)
 const DEFAULT_UNCONFORMITY_GAP_MS = 60_000; // silence long enough to mark an erosion gap
 const MAX_VOLUME_BONUS_LINES = 8; // extra lines in a bucket beyond this add no more thickness
+const MAX_MESSAGE_LENGTH = 200; // cap kept on each layer so a viewer embedding many layers stays small
 
 const UNCONFORMITY_COLOR = { h: 30, s: 8, l: 38 }; // flat, weathered-rock gray-brown
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function truncateMessage(message) {
+  if (message.length <= MAX_MESSAGE_LENGTH) {
+    return message;
+  }
+  return `${message.slice(0, MAX_MESSAGE_LENGTH)}…`;
 }
 
 function toHex(channel) {
@@ -130,6 +138,7 @@ class LayerEngine {
       height,
       color,
       textureSeed,
+      message: truncateMessage(entry.message),
     };
   }
 

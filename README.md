@@ -6,17 +6,19 @@ like a geological core sample. Built for backend and SRE teams who want to
 browse months of incidents as a single vertical history instead of grepping
 timestamps.
 
-This milestone adds the **tail daemon** on top of the strata engine and core
-renderer: `--follow` mode keeps a log file open, reads whatever lines have
-been appended since the last check, and turns each one into a layer as it
-arrives. Progress (byte offset, file identity, engine internals, and the
-accumulated layers themselves) is persisted to disk after every batch of new
-lines, so stopping and restarting the daemon resumes exactly where it left
-off instead of re-reading and re-carving the whole file. Earlier milestones
-added the strata engine (severity/volume/gap → layer) and the core renderer
-(layers → one scrollable SVG "core sample" image); both are exercised
-through the same CLI, which can also print one JSON layer per log line or,
-with `--svg`, the whole composed image in one shot.
+This milestone adds the **offline viewer**: a single self-contained HTML
+file with the full core sample, a hover tooltip per layer, and a vertical
+scrub bar for jumping to any point in months of history instantly, with no
+server and no network access required — open it straight from disk in any
+browser. It builds on the strata engine (severity/volume/gap → layer), the
+core renderer (layers → one scrollable SVG "core sample" image), and the
+tail daemon (`--follow` mode, which keeps a log file open, reads whatever
+lines have been appended since the last check, and turns each one into a
+layer as it arrives, persisting enough state to disk after every batch that
+stopping and restarting resumes exactly where it left off instead of
+re-reading the whole file). All of this is exercised through the same CLI,
+which can also print one JSON layer per log line or, with `--svg`, the
+composed SVG image alone.
 
 ## Install
 
@@ -42,6 +44,24 @@ the whole log instead of the per-line JSON stream:
 node bin/logfossil.js --svg path/to/app.log > core-sample.svg
 ```
 
+### Offline viewer
+
+Add `--html` to get a standalone, self-contained HTML page instead: the
+same core-sample image, in a scrollable viewport, with a hover tooltip
+showing each layer's severity, timestamp, gap, volume and message as the
+mouse moves over it, plus a vertical scrub bar on the right that can be
+dragged (or clicked) to jump to any point in the core instantly instead of
+scrolling through everything in between:
+
+```
+node bin/logfossil.js --html path/to/app.log > core-sample.html
+```
+
+Open the resulting file directly from disk in any browser — it makes no
+network requests and loads no external scripts, fonts or stylesheets, so it
+keeps working offline and the whole file can be archived or shared as one
+artifact.
+
 ### Tailing a live log file
 
 Use `--follow` to run as a daemon against a live log file instead of a
@@ -65,10 +85,13 @@ Killing and restarting the daemon against the same state file resumes
 exactly where it left off — it does not re-read or re-emit lines it already
 processed. `--svg-out <path>` additionally rewrites a full SVG core-sample
 snapshot of everything tailed so far on every batch of new lines, so you can
-open that file in a browser and watch the strata grow:
+open that file in a browser and watch the strata grow; `--html-out <path>`
+does the same for the full offline viewer (hover tooltips and scrub bar
+included), so reloading that page always shows the latest core:
 
 ```
 node bin/logfossil.js --follow --svg-out core-sample.svg path/to/app.log
+node bin/logfossil.js --follow --html-out core-sample.html path/to/app.log
 ```
 
 The daemon handles the common ways a log file changes under it: in-place
@@ -100,7 +123,8 @@ Each line of output is a JSON object describing one layer:
 ```
 {"severity":"ERROR","timestampMs":1709638200000,"gapMs":5399000,
  "bucketVolume":1,"isUnconformity":true,"height":1.5,
- "color":{"h":30,"s":8,"l":38,"hex":"#696159"},"textureSeed":3037049883}
+ "color":{"h":30,"s":8,"l":38,"hex":"#696159"},"textureSeed":3037049883,
+ "message":"2024-03-05T11:50:00Z ERROR connection refused"}
 ```
 
 - **height** grows with severity (TRACE through FATAL) and with how many
@@ -113,6 +137,9 @@ Each line of output is a JSON object describing one layer:
   and rendered in a flat weathered-rock color regardless of severity.
 - **textureSeed** is a deterministic 32-bit integer for seeding the rock
   texture/noise pattern in the eventual rendered image.
+- **message** is the original line, truncated to 200 characters, kept
+  alongside the derived fields so the offline viewer's hover tooltip can
+  show the actual log text for a layer, not just its statistics.
 
 The same input always produces the same sequence of layers: nothing in the
 engine depends on wall-clock time or randomness.
@@ -120,7 +147,7 @@ engine depends on wall-clock time or randomness.
 Programmatic API (see `src/index.js`):
 
 ```js
-const { parseLine, LayerEngine, renderCoreSampleSvg, TailDaemon } = require('logfossil');
+const { parseLine, LayerEngine, renderCoreSampleSvg, renderViewerHtml, TailDaemon } = require('logfossil');
 
 const engine = new LayerEngine();
 const layers = [
@@ -129,6 +156,7 @@ const layers = [
 ].map((line) => engine.process(parseLine(line)));
 
 const svg = renderCoreSampleSvg(layers); // scrollable SVG core-sample string
+const html = renderViewerHtml(layers); // standalone offline viewer page
 
 // Tail a live file, resuming from ./app.log.state.json if it already exists:
 const daemon = new TailDaemon('./app.log', './app.log.state.json');
@@ -140,7 +168,15 @@ No external dependencies are used anywhere in this milestone: file
 tailing is built on Node's own `fs` (reading, stat'ing, and atomically
 persisting state via write-then-rename) and `string_decoder` (safely
 decoding UTF-8 across chunk boundaries that may split a multi-byte
-character) — both standard library.
+character) — both standard library. The offline viewer is a plain HTML
+file with inline CSS and vanilla JavaScript (no bundler, no framework, no
+`<script src>` or `fetch` of anything); the only runtime risk worth calling
+out is that log lines are untrusted text, so the per-layer data embedded
+for the hover tooltip is passed through `JSON.stringify` (with any
+`</script` sequence inside a message broken up so it can't close the
+surrounding tag early) and rendered back with `textContent`, never
+`innerHTML`, so a crafted log line can't execute as markup or script in the
+viewer.
 
 Run the test suite with:
 

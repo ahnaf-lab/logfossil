@@ -62,6 +62,31 @@ function renderBand(layer, width, y, height) {
 }
 
 /**
+ * Stack layers top-to-bottom into pixel bands (y + height per layer), the
+ * same geometry renderCoreSampleSvg draws. Exposed separately so other
+ * consumers (e.g. the offline HTML viewer) can line up hit-testing and
+ * tooltip positions with the exact band boundaries the SVG was drawn with,
+ * without re-deriving the stacking math themselves.
+ */
+function computeBands(layers, options = {}) {
+  if (!Array.isArray(layers)) {
+    throw new TypeError('computeBands requires an array of layers');
+  }
+
+  const scale = options.scale || DEFAULT_SCALE;
+
+  let cumulativeY = 0;
+  const bands = layers.map((layer) => {
+    const pxHeight = Math.max(round2(layer.height * scale), MIN_LAYER_PX);
+    const band = { layer, y: round2(cumulativeY), height: pxHeight };
+    cumulativeY += pxHeight;
+    return band;
+  });
+
+  return { bands, totalHeight: round2(cumulativeY) };
+}
+
+/**
  * Compose a list of layers (from LayerEngine.process) into a single tall
  * SVG "core sample": layers stack top-to-bottom in the order given (the
  * first layer processed is the top of the sample, so scrolling down reveals
@@ -75,16 +100,7 @@ function renderCoreSampleSvg(layers, options = {}) {
   }
 
   const width = options.width || DEFAULT_WIDTH;
-  const scale = options.scale || DEFAULT_SCALE;
-
-  let cumulativeY = 0;
-  const bands = layers.map((layer) => {
-    const pxHeight = Math.max(round2(layer.height * scale), MIN_LAYER_PX);
-    const band = { layer, y: round2(cumulativeY), height: pxHeight };
-    cumulativeY += pxHeight;
-    return band;
-  });
-  const totalHeight = round2(cumulativeY);
+  const { bands, totalHeight } = computeBands(layers, options);
 
   const body = bands.map(({ layer, y, height }) => renderBand(layer, width, y, height)).join('');
 
@@ -97,4 +113,4 @@ function renderCoreSampleSvg(layers, options = {}) {
   );
 }
 
-module.exports = { renderCoreSampleSvg };
+module.exports = { renderCoreSampleSvg, computeBands, DEFAULT_WIDTH, DEFAULT_SCALE };

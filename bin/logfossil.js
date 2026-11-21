@@ -7,25 +7,30 @@ const path = require('path');
 const { parseLine } = require('../src/parseLine');
 const { LayerEngine } = require('../src/layerEngine');
 const { renderCoreSampleSvg } = require('../src/renderer');
+const { renderViewerHtml } = require('../src/viewer');
 const { TailDaemon } = require('../src/tailer');
 
 function printUsage() {
   process.stdout.write(
-    'Usage: logfossil [--svg] [file]\n' +
-      '       logfossil --follow [--state <path>] [--svg-out <path>] <file>\n' +
+    'Usage: logfossil [--svg|--html] [file]\n' +
+      '       logfossil --follow [--state <path>] [--svg-out <path>] [--html-out <path>] <file>\n' +
       '  Reads a log file (or stdin, if no file is given) one line at a time\n' +
       '  and prints one JSON "layer" per line to stdout: deterministic height,\n' +
       '  color and texture seed derived from that line\'s severity, volume and\n' +
       '  gap since the previous line.\n' +
       '  With --svg, buffers all layers instead and prints one scrollable SVG\n' +
       '  core-sample image composed from the whole log.\n' +
+      '  With --html, buffers all layers instead and prints a standalone HTML\n' +
+      '  offline viewer: the same core-sample image in a scrollable page with\n' +
+      '  a hover tooltip per layer and a vertical scrub bar for jumping to\n' +
+      '  any point in the core instantly.\n' +
       '  With --follow, runs as a daemon: reads the whole file once to catch\n' +
       '  up, then keeps polling for appended lines, emitting one JSON layer\n' +
       '  per new line and persisting resumable state to --state (default:\n' +
       '  "<file>.logfossil-state.json") so a restart picks up where it left\n' +
-      '  off instead of re-reading the file. With --svg-out, also rewrites a\n' +
-      '  scrollable SVG core sample of everything tailed so far on each\n' +
-      '  batch of new lines.\n'
+      '  off instead of re-reading the file. With --svg-out / --html-out,\n' +
+      '  also rewrites the SVG image / HTML viewer of everything tailed so\n' +
+      '  far on each batch of new lines.\n'
   );
 }
 
@@ -37,7 +42,7 @@ function findOption(argv, name) {
   return argv[index + 1];
 }
 
-const VALUE_FLAGS = new Set(['--state', '--svg-out']);
+const VALUE_FLAGS = new Set(['--state', '--svg-out', '--html-out']);
 
 function runFollow(argv) {
   let filePath = null;
@@ -58,6 +63,7 @@ function runFollow(argv) {
   const resolvedFile = path.resolve(filePath);
   const statePath = findOption(argv, '--state') || `${resolvedFile}.logfossil-state.json`;
   const svgOutPath = findOption(argv, '--svg-out');
+  const htmlOutPath = findOption(argv, '--html-out');
 
   const daemon = new TailDaemon(resolvedFile, statePath);
   daemon.on('layer', (layer) => {
@@ -71,6 +77,9 @@ function runFollow(argv) {
     const changed = daemon.pollOnce();
     if (changed && svgOutPath) {
       fs.writeFileSync(svgOutPath, renderCoreSampleSvg(daemon.getLayers()));
+    }
+    if (changed && htmlOutPath) {
+      fs.writeFileSync(htmlOutPath, renderViewerHtml(daemon.getLayers()));
     }
   };
 
@@ -98,6 +107,8 @@ function main(argv) {
   }
 
   const svgMode = argv.includes('--svg');
+  const htmlMode = argv.includes('--html');
+  const bufferMode = svgMode || htmlMode;
   const filePath = argv.find((arg) => !arg.startsWith('--'));
   const input = filePath ? fs.createReadStream(path.resolve(filePath)) : process.stdin;
 
@@ -108,7 +119,7 @@ function main(argv) {
 
   const engine = new LayerEngine();
   const rl = readline.createInterface({ input, crlfDelay: Infinity });
-  const bufferedLayers = svgMode ? [] : null;
+  const bufferedLayers = bufferMode ? [] : null;
 
   rl.on('line', (line) => {
     const entry = parseLine(line);
@@ -116,16 +127,16 @@ function main(argv) {
       return;
     }
     const layer = engine.process(entry);
-    if (svgMode) {
+    if (bufferMode) {
       bufferedLayers.push(layer);
     } else {
       process.stdout.write(`${JSON.stringify(layer)}\n`);
     }
   });
 
-  if (svgMode) {
+  if (bufferMode) {
     rl.on('close', () => {
-      process.stdout.write(renderCoreSampleSvg(bufferedLayers));
+      process.stdout.write(htmlMode ? renderViewerHtml(bufferedLayers) : renderCoreSampleSvg(bufferedLayers));
     });
   }
 }
