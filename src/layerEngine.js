@@ -132,6 +132,33 @@ class LayerEngine {
       textureSeed,
     };
   }
+
+  /**
+   * Snapshot the small amount of running state (last timestamp seen, current
+   * volume bucket) that future `process` calls depend on. Combined with
+   * `importState`, this lets a tail daemon persist just this snapshot and
+   * resume mid-stream without re-reading the whole file to rebuild it.
+   */
+  exportState() {
+    return {
+      lastTimestampMs: this.lastTimestampMs,
+      currentBucketKey: this.currentBucketKey,
+      currentBucketVolume: this.currentBucketVolume,
+    };
+  }
+
+  /**
+   * Restore running state previously captured by `exportState`. Missing or
+   * null input leaves a freshly constructed engine untouched.
+   */
+  importState(state) {
+    if (!state) {
+      return;
+    }
+    this.lastTimestampMs = state.lastTimestampMs ?? null;
+    this.currentBucketKey = state.currentBucketKey ?? null;
+    this.currentBucketVolume = state.currentBucketVolume ?? 0;
+  }
 }
 
 module.exports = { LayerEngine, deriveColor, hslToHex };
