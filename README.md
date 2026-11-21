@@ -6,15 +6,17 @@ like a geological core sample. Built for backend and SRE teams who want to
 browse months of incidents as a single vertical history instead of grepping
 timestamps.
 
-This milestone adds the **offline viewer**: a single self-contained HTML
-file with the full core sample, a hover tooltip per layer, and a vertical
-scrub bar for jumping to any point in months of history instantly, with no
-server and no network access required — open it straight from disk in any
-browser. It builds on the strata engine (severity/volume/gap → layer), the
-core renderer (layers → one scrollable SVG "core sample" image), and the
-tail daemon (`--follow` mode, which keeps a log file open, reads whatever
-lines have been appended since the last check, and turns each one into a
-layer as it arrives, persisting enough state to disk after every batch that
+This milestone adds **multi-core config**: named color themes that recolor
+a rendered core without touching the underlying layers, and a side-by-side
+composer that lines up several named log sources as separate columns in
+one image, so logs from different services can be visually compared
+instead of merged line-by-line. It builds on the strata engine
+(severity/volume/gap → layer), the core renderer (layers → one scrollable
+SVG "core sample" image), the offline viewer (the same image wrapped in a
+self-contained HTML page with a hover tooltip and scrub bar), and the tail
+daemon (`--follow` mode, which keeps a log file open, reads whatever lines
+have been appended since the last check, and turns each one into a layer
+as it arrives, persisting enough state to disk after every batch that
 stopping and restarting resumes exactly where it left off instead of
 re-reading the whole file). All of this is exercised through the same CLI,
 which can also print one JSON layer per log line or, with `--svg`, the
@@ -107,6 +109,37 @@ write in between) — in practice this requires the rewritten file to
 coincidentally land on-or-past the exact byte offset already read, which is
 rare for real log rotation.
 
+### Color themes
+
+Add `--theme <name>` to any `--svg`, `--html`, `--svg-out` or `--html-out`
+render to recolor the bands without touching the underlying layers — the
+same log still carves the exact same heights and gaps, only the palette
+changes. Built-in themes: `default` (the original severity-hued palette,
+and the only one applied when `--theme` is omitted), `arctic` (cooler,
+brighter, less saturated), `ember` (warmer, more saturated) and `mono`
+(fully desaturated, grayscale bands):
+
+```
+node bin/logfossil.js --svg --theme arctic path/to/app.log > core-sample.svg
+```
+
+### Side-by-side multi-core view
+
+Use `--core <name>=<path>` (repeatable) instead of a single file argument
+to compose several log files into one image, each as its own labeled
+column with its own independent layer stack, so sources can be compared
+side by side rather than interleaved:
+
+```
+node bin/logfossil.js --core web=web.log --core db=db.log > cores.svg
+```
+
+Append `:<theme>` to a core's value to pick that column's theme
+explicitly (e.g. `--core db=db.log:mono`); columns left unspecified cycle
+through the built-in themes by position so adjacent columns are visually
+distinct by default. `--core` always prints a single composed SVG to
+stdout; it does not support `--follow`.
+
 The image stacks one flat-colored band per layer top to bottom, in the order
 the lines occurred (so scrolling down shows more recent history), each band
 sized from its deterministic height. Bands get a scattering of subtle
@@ -147,7 +180,15 @@ engine depends on wall-clock time or randomness.
 Programmatic API (see `src/index.js`):
 
 ```js
-const { parseLine, LayerEngine, renderCoreSampleSvg, renderViewerHtml, TailDaemon } = require('logfossil');
+const {
+  parseLine,
+  LayerEngine,
+  renderCoreSampleSvg,
+  renderViewerHtml,
+  renderMultiCoreSvg,
+  TailDaemon,
+  THEME_NAMES,
+} = require('logfossil');
 
 const engine = new LayerEngine();
 const layers = [
@@ -157,6 +198,17 @@ const layers = [
 
 const svg = renderCoreSampleSvg(layers); // scrollable SVG core-sample string
 const html = renderViewerHtml(layers); // standalone offline viewer page
+const themed = renderCoreSampleSvg(layers, { theme: 'arctic' }); // same layers, recolored
+
+// Compose two independently-processed sources into one side-by-side image:
+const dbEngine = new LayerEngine();
+const dbLayers = ['2024-03-05T10:00:00Z WARN db slow'].map((line) => dbEngine.process(parseLine(line)));
+const multiSvg = renderMultiCoreSvg([
+  { name: 'web', layers },
+  { name: 'db', layers: dbLayers, theme: 'mono' },
+]);
+
+console.log(THEME_NAMES); // ['default', 'arctic', 'ember', 'mono']
 
 // Tail a live file, resuming from ./app.log.state.json if it already exists:
 const daemon = new TailDaemon('./app.log', './app.log.state.json');

@@ -1,6 +1,7 @@
 'use strict';
 
 const { mulberry32 } = require('./rng');
+const { applyTheme } = require('./themes');
 
 const DEFAULT_WIDTH = 320;
 const DEFAULT_SCALE = 6; // pixels per unit of layer.height
@@ -25,8 +26,9 @@ function round2(value) {
  * always renders identical texture. Unconformity layers get flat erosion
  * hatching instead, since they represent a gap rather than deposited rock.
  */
-function renderBand(layer, width, y, height) {
-  const fill = layer.color.hex;
+function renderBand(layer, width, y, height, themeName) {
+  const themedColor = applyTheme(layer.color, themeName);
+  const fill = themedColor.hex;
   const title = escapeXml(
     `${layer.severity} gap=${layer.gapMs}ms vol=${layer.bucketVolume}${
       layer.isUnconformity ? ' unconformity' : ''
@@ -42,8 +44,8 @@ function renderBand(layer, width, y, height) {
     }
   } else {
     const rng = mulberry32(layer.textureSeed);
-    const speckleColor = layer.color.l < 50 ? '#ffffff' : '#000000';
-    const speckleOpacity = layer.color.l < 50 ? 0.12 : 0.08;
+    const speckleColor = themedColor.l < 50 ? '#ffffff' : '#000000';
+    const speckleOpacity = themedColor.l < 50 ? 0.12 : 0.08;
     const speckleCount = Math.min(MAX_SPECKLES, Math.max(1, Math.round(height / 4)));
     for (let i = 0; i < speckleCount; i += 1) {
       const sx = round2(rng() * width);
@@ -100,9 +102,10 @@ function renderCoreSampleSvg(layers, options = {}) {
   }
 
   const width = options.width || DEFAULT_WIDTH;
+  const themeName = options.theme || 'default';
   const { bands, totalHeight } = computeBands(layers, options);
 
-  const body = bands.map(({ layer, y, height }) => renderBand(layer, width, y, height)).join('');
+  const body = bands.map(({ layer, y, height }) => renderBand(layer, width, y, height, themeName)).join('');
 
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${totalHeight}" ` +
@@ -113,4 +116,11 @@ function renderCoreSampleSvg(layers, options = {}) {
   );
 }
 
-module.exports = { renderCoreSampleSvg, computeBands, DEFAULT_WIDTH, DEFAULT_SCALE };
+module.exports = {
+  renderCoreSampleSvg,
+  computeBands,
+  escapeXml,
+  DEFAULT_WIDTH,
+  DEFAULT_SCALE,
+  BACKGROUND,
+};

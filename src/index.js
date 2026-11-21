@@ -8,6 +8,8 @@ const { renderCoreSampleSvg, computeBands } = require('./renderer');
 const { renderViewerHtml } = require('./viewer');
 const { TailDaemon } = require('./tailer');
 const { loadState, saveState } = require('./stateStore');
+const { THEMES, THEME_NAMES, applyTheme } = require('./themes');
+const { renderMultiCoreSvg } = require('./multiCore');
 
 module.exports = {
   parseLine,
@@ -26,4 +28,8 @@ module.exports = {
   TailDaemon,
   loadState,
   saveState,
+  THEMES,
+  THEME_NAMES,
+  applyTheme,
+  renderMultiCoreSvg,
 };
